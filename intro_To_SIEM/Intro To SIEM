@@ -1,0 +1,199 @@
+Tryhackme Learning Notes:
+=============================
+====================
+Intro To SIEM:
+====================
+
+What is a Sysmon?
+--------------------
+System Monitor is a Windows service and driver that monitor the system activity to the windows event log and provides detailed information about process creations and network connections.
+also it provides information about changes in the creation of files.
+
+2 Types Of Log Sources :
+=======================
+ 1) Host-Cenetric Log Sources:
+ -------------------------------
+ those are log sources that capture events that occurred to the host or related to the host.
+ a few log sources that generic those logs are Windows Event logs, Sysmon, Osquery etc..
+
+ What is a Osquery?
+ -------------------
+ this is a tool of the operating system framwork for Windows, macOS, and Linux that make low-level operating system analytics and monitor the performance and expose the opreating system as a high-performance database.
+
+ Some examples of host-centric logs are:
+ ---------------------------------------
+ * A user access a file
+ * A user attempting to authenticate
+ * A process Execution
+ * A process add/delet/edit a reg key or value
+ * Powershell execution
+--------------------------------------------------------------------------
+
+2) Network-Centric Log Sources :
+---------------------------------
+those are network related logs that are generated when the hosts communicate with each other or access the internet for website.
+some network-based protocols are: SSH,VPN,HTTP/s,FTP etc..
+
+Some examples of Network-Centric logs are:
+-------------------------------------------
+* SSH connection
+* A file being accessed via FTP
+* Web traffic
+* A user accessing company's resources with VPN
+* Network file sharing Activity
+--------------------------------------------------------------------------
+
+Every Device in the Network generates some kind of logs whenever an activity is performed on it.
+
+Here's some common devices that are found in the network that generates event:
+========================================================================
+
+Windows Machine:
+==================
+Windows Machine records every event that can be viewed in the Event Viewer utility.
+this tool assigns a unique ID for each type of log activity and making it easy for us the analyst's to examine and keep track of it.
+to view those logs in Windows Machine all you need to do is go the search bar and type Event Viewer and it takes you to the tool where all the different logs are stored and can be viewed.(Example in PNG files.)
+
+Linux Workstation:
+====================
+Linux OS stores all the related logs such as events,errors,warnings etc and than ingested those into the SIEM for continuous monitoring.
+
+Some of the common locations where Linux store logs are:
+---------------------------------------------------------
+* /var/log/httpd : Contains HTTP Request/Response and error logs.
+* /var/log/cron : Events related to cron jobs are stored in this location.
+* /var/log/auth.log and /var/log/secure : Stores authentication related logs.
+* /var/log/kern : This file stores kernel related events.
+
+(Example of cron log in PNG files.)
+
+Web Server:
+============
+it is important to keep an eye on all the requests/responses that are coming in and out of the webserver for ant potential web attack attempt.
+in Linux, common locations to write all apache related logs are:
+/var/log/apache or /var/log/httpd
+
+(Example of apache logs in PNG files.)
+--------------------------------------------------------------------------
+
+logs Containment :
+====================
+Each SIEM solution has its own way of ingesting the logs.
+
+Some common solutions are explained below:
+------------------------------------------
+
+1) Agent/Forwarder: These SIEM solutions provide a tool called an agent that gets installed in the endpoint. it is configured to capture all the important logs and send them to the SIEM server.
+
+2) syslog : syslog is a widely used protocol to collect data from various systems like web servers, databases, etc.. 
+this data is sent in real-time to a centralized destination.
+
+3) Manual Upload : Some SIEM solutions can also be configured to listen on a certain port,and then the endpoints forward the data to the SIEM instance on the listening port.
+
+--------------------------------------------------------------------------
+
+SIEM Capabilities:
+===================
+SIEM is one major component of SOC ecosystem.SIEM starts by collecting logs and examining if any event/flow has matched the condition set in the rule or crossed a certain threshold
+
+Some of the common capabilities of SIEM are:
+---------------------------------------------
+* Correlation between events from different log sources.
+* Provide visibility on both Host-Centric and Network-centric activites.
+* Allow analysts to investigate the latest threats and timly response.
+* Hunt for threats that are not detected bt the rules in place.
+(Picture of SIEM Componets in PNG files.)
+
+-------------------------------------------------------------------------
+
+SOC Analyst Responsibilites:
+=============================
+Soc analyst need to utilize SIEM solutions in order to have better visibility of what is happening within the network.
+
+Some of their responsibilities include:
+-----------------------------------------
+* Monitor and investigation.
+* identifying Flase positives.
+* Tuning Rules which are causing the noise or Flase Positives.
+* Reporting and Compliance.
+* identifying blind spots in the network visibility and covering them.
+
+--------------------------------------------------------------------------
+
+The Dashboard :
+================
+Dashboards are the most important componets of any SIEM. the SIEM presents the data to the analysts after being normelized and ingested.
+the summary of these analyses is presented in the form of actionable insights with the help of multiple dashboards.
+Each SIEM solution comes with some default dashboards and provides an option to custom the Dashboard Creation.
+
+Some of the information that can be found in the dashboard is:
+--------------------------------------------------------------
+* Alert Highlights
+* System Notifications
+* Health Alert
+* List of Failed Login Attempts
+* Events ingested Count
+* Rules trigged
+* Top Domain Visited
+
+(Example Of Default Qradar SIEM Picture in PNG files.)
+
+--------------------------------------------------------------------------
+
+Correlation Rules :
+====================
+Correlation rules are pretty much logical expressions set to be triggered.
+
+A few exampels of Correlation rules are:
+------------------------------------------
+* if a user gets 5 failed Login attempts in 10 seconds - Raise alert for "Multiple Failed Login Attempts"
+
+* login is successful after multiple failed login attempts - Raise alert "Successful Login after multiple login attempts"
+
+* A rule to alert every time a user plugs in a USB (Useful if restricted as per the company policy)
+
+* if outbound traffic is > 25 MB - Raise alert for "potential Data exfiltration attempt" (Usually,it depends on the company policy.)
+
+--------------------------------------------------------------------------
+
+How a correlation rule is created:
+==================================
+To explain how the rule workes,consider the following Eventlog cases:
+----------------------------------------------------------------------
+
+Case 1 :
+---------
+Adversaries(hackers) tend to remove the logs during the post-exploitation phase to remove their attack.
+A unique Event ID 104 is logged every time a user tries to remove or clear event logs.
+To create a rule based on this activity, we can set a condition rule
+
+Rule: if the Log source is WinEventLog AND EventID is 104 - Trigger an alert "Event Log Cleard"
+
+Case 2 :
+---------
+Adversaries(hackers) use commands like whoami after the exploitation/privesc phase, the following Fields will be helpful to include in the rule.
+
+* Log Source : identify the log source capturing the event logs
+* Event ID : which Event ID is associated with Process Execution activity? in this case event id 4688 will be helpful.
+*NewProcessName : which process name will be helpful to include in the rule?
+
+Rule: if Log Source is WinEventLog AND EventCode is 4688 ,and NewProcessName contains whoami, then trigger an alert "WHOAMI command Execution DETECTED"
+--------------------------------------------------------------------------
+Correlation rules keep an eye on the values of certain fields to get triggered.That is the reason why it is important to have normalized ingested.
+
+
+After Investigation:
+======================
+Once an alert is triggered,the events/flows associated with the alert are examined,and the rule is checked to see which conditions are met.Based on the investigation the analyst determines if its a False Positive or True.
+
+Some of the actions that are performed after the analysis are:
+---------------------------------------------------------------
+* Alert is Flase Alarm - it may require tuning the rule to avoid similar Flase positivs from occurring again.
+* Alert is True Positive - Perform further investigation.
+* Contact the asset owner to inquire about the activity.
+* Suspicious activity is confirmed.Isolate the infected host.
+* Block the suspicious IP.
+
+
+
+
